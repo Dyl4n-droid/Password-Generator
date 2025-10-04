@@ -1,0 +1,346 @@
+<!doctype html>
+
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Password Generator X</title>
+  <style>
+    :root{--bg:#0f1722;--card:#0b1220;--accent:#7dd3fc;--muted:#9aa4b2;--glass: rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:linear-gradient(135deg,#071021 0%, #0e1b2a 100%);color:#e6eef6}
+    .wrap{max-width:980px;margin:28px auto;padding:20px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow: 0 6px 30px rgba(2,6,23,0.6)}
+    header{display:flex;align-items:center;gap:12px}
+    header h1{margin:0;font-size:20px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:16px}
+    .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    .controls{display:flex;flex-direction:column;gap:10px}
+    .row{display:flex;gap:10px;align-items:center}
+    .big-output{font-family:monospace;background:var(--glass);padding:12px;border-radius:8px;font-size:18px;word-break:break-all}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:transparent;border:1px solid rgba(125,211,252,0.15);color:var(--accent);padding:8px 10px;border-radius:8px;cursor:pointer}
+    button.primary{background:var(--accent);color:#042331;border:none}
+    input[type="range"]{width:100%}
+    .muted{font-size:12px;color:var(--muted)}
+    .small{font-size:13px}
+    .checkboxes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .footer{margin-top:12px;font-size:12px;color:var(--muted)}
+    .tools{display:flex;flex-direction:column;gap:8px}
+    textarea{width:100%;min-height:120px;background:#071027;border:1px solid rgba(255,255,255,0.02);padding:10px;color:inherit;border-radius:8px}
+    .field{display:flex;flex-direction:column}
+    code.kv{background:rgba(0,0,0,0.2);padding:2px 6px;border-radius:6px;font-size:12px}
+    .pill{display:inline-block;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-labelledby="title">
+    <header>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden><rect width="24" height="24" rx="6" fill="#071827"/><path d="M7 11h10M7 15h6M7 7h10" stroke="#7dd3fc" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div>
+        <h1 id="title">Generador de contraseñas seguro</h1>
+        <div class="muted">Personaliza longitud, filtros, convierte a binario o encripta — se genera al instante.</div>
+      </div>
+    </header><div class="grid">
+  <section class="card" aria-labelledby="main-controls">
+    <h2 id="main-controls" class="small">Controles</h2>
+    <div class="controls">
+      <div class="field">
+        <label for="length">Longitud: <span id="lenVal" class="pill">16</span></label>
+        <input id="length" type="range" min="8" max="49" value="16">
+        <div class="muted small">Cambia el deslizador o escribe el número</div>
+        <input id="lengthNumber" type="number" min="8" max="49" value="16" style="width:90px;margin-top:6px">
+      </div>
+
+      <div class="field">
+        <label>Filtros / caracteres</label>
+        <div class="checkboxes">
+          <label><input type="checkbox" id="includeLetters" checked> Letras (a-z A-Z)</label>
+          <label><input type="checkbox" id="includeNumbers" checked> Números (0-9)</label>
+          <label><input type="checkbox" id="includeSpecial"> Caracteres especiales</label>
+          <label><input type="checkbox" id="readable"> Legible (evita 0 O l 1 I)</label>
+        </div>
+        <div style="margin-top:8px">
+          <label><input type="checkbox" id="easyType"> Fácil de escribir (solo minúsculas y números)</label>
+        </div>
+        <div class="muted small" style="margin-top:6px">Si no hay caracteres seleccionados, se usarán letras + números por defecto.</div>
+      </div>
+
+      <div class="field">
+        <label>Modo rápido (presets)</label>
+        <div class="row small">
+          <button id="presetNumbers">Solo números</button>
+          <button id="presetLetters">Solo letras</button>
+          <button id="presetSpecial">Solo especiales</button>
+          <button id="presetMixed" class="primary">Mixto</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Salida</label>
+        <div class="big-output" id="output" role="textbox" aria-live="polite" tabindex="0">...</div>
+        <div class="actions" style="margin-top:8px">
+          <button id="copyBtn">Copiar</button>
+          <button id="regen">Regenerar</button>
+          <button id="toggleBinary">Mostrar binario</button>
+          <button id="base64">Base64</button>
+          <button id="shaBtn">SHA-256 (hash)</button>
+        </div>
+        <div class="muted small" style="margin-top:8px">Pulsa en "Copiar" para enviar la contraseña al portapapeles. Al cambiar longitud o filtros se genera automáticamente.</div>
+      </div>
+
+      <div class="field">
+        <label>Encriptar / desencriptar (opcional)</label>
+        <input id="passphrase" placeholder="Frase/clave para encriptar (mín 6 chars)" aria-label="Frase de encriptacion">
+        <div class="row" style="margin-top:8px">
+          <button id="encryptBtn">Encriptar</button>
+          <button id="decryptBtn">Desencriptar</button>
+        </div>
+        <div class="muted small">Se usa AES-GCM con Web Crypto. Al encriptar verás un texto base64 que contiene salt+iv+cipher.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <aside class="card">
+    <h3 class="small">Herramientas & vista</h3>
+    <div class="tools">
+      <div>
+        <label class="small">Binario / detalles</label>
+        <textarea id="binaryArea" readonly placeholder="Activa 'Mostrar binario' o pulsa SHA/BASE64"></textarea>
+      </div>
+
+      <div>
+        <label class="small">Notas rápidas</label>
+        <div class="muted small">- "Legible" evita caracteres normalmente confusos: 0 O o 1 l I | - "Fácil de escribir" da solo minúsculas y números para teclear con una mano.
+        <br>- SHA-256 es un hash no reversible. Encriptar permite recuperar si usas la misma frase.</div>
+      </div>
+
+      <div>
+        <label class="small">Generador de ejemplo</label>
+        <div class="muted small">Usa los botones para cambiar presets o ajusta manualmente. La contraseña se regenera cuando mueves el deslizador o tocas las casillas.</div>
+      </div>
+
+    </div>
+  </aside>
+</div>
+
+<div class="footer">Creado para tus pruebas — dímelo si quieres que lo convierta en un archivo .js separado o que guarde un historial local (localStorage).</div>
+
+  </div><script>
+// --- Generador de contraseñas ---
+const output = document.getElementById('output');
+const binaryArea = document.getElementById('binaryArea');
+const lengthRange = document.getElementById('length');
+const lengthNumber = document.getElementById('lengthNumber');
+const lenVal = document.getElementById('lenVal');
+const includeLetters = document.getElementById('includeLetters');
+const includeNumbers = document.getElementById('includeNumbers');
+const includeSpecial = document.getElementById('includeSpecial');
+const readable = document.getElementById('readable');
+const easyType = document.getElementById('easyType');
+const copyBtn = document.getElementById('copyBtn');
+const regenBtn = document.getElementById('regen');
+const toggleBinaryBtn = document.getElementById('toggleBinary');
+const base64Btn = document.getElementById('base64');
+const shaBtn = document.getElementById('shaBtn');
+const encryptBtn = document.getElementById('encryptBtn');
+const decryptBtn = document.getElementById('decryptBtn');
+const passphraseInput = document.getElementById('passphrase');
+
+const presetNumbers = document.getElementById('presetNumbers');
+const presetLetters = document.getElementById('presetLetters');
+const presetSpecial = document.getElementById('presetSpecial');
+const presetMixed = document.getElementById('presetMixed');
+
+// character sets
+const SET = {
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  digits: '0123456789',
+  special: '!@#$%^&*()-_=+[]{};:,.<>?/~`|\\'
+};
+const ambiguous = /[O0Il1o]/g; // for readable filter
+
+function getActiveCharset(){
+  // if easyType: only lower + digits (if digits selected)
+  let s = '';
+  if(easyType.checked){
+    s += SET.lower;
+    if(includeNumbers.checked) s += SET.digits;
+    return s || (SET.lower + SET.digits);
+  }
+  // normal behavior: build from checkboxes
+  if(includeLetters.checked) s += SET.lower + SET.upper;
+  if(includeNumbers.checked) s += SET.digits;
+  if(includeSpecial.checked) s += SET.special;
+  if(!s){ // default fallback
+    s = SET.lower + SET.digits;
+  }
+  if(readable.checked){
+    s = s.replace(ambiguous, '');
+  }
+  return s;
+}
+
+function secureRandomInt(max){
+  // returns integer in [0, max)
+  const buf = new Uint32Array(1);
+  window.crypto.getRandomValues(buf);
+  return Math.floor((buf[0] / (0xffffffff + 1)) * max);
+}
+
+function generatePassword(len){
+  const chars = getActiveCharset();
+  if(!chars || chars.length === 0) return '';
+  let pass = '';
+  for(let i=0;i<len;i++){
+    pass += chars.charAt(secureRandomInt(chars.length));
+  }
+  return pass;
+}
+
+function toBinary(text){
+  return Array.from(new TextEncoder().encode(text)).map(b => b.toString(2).padStart(8,'0')).join(' ');
+}
+
+function toBase64(text){
+  try{
+    return btoa(unescape(encodeURIComponent(text)));
+  }catch(e){
+    return 'Error';
+  }
+}
+
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Encryption helpers using Web Crypto (AES-GCM + PBKDF2)
+async function deriveKey(passphrase, salt){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), {name:'PBKDF2'}, false, ['deriveKey']);
+  return await crypto.subtle.deriveKey({name:'PBKDF2', salt: salt, iterations: 250000, hash: 'SHA-256'}, keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+
+function randomBytes(len){
+  const b = new Uint8Array(len);
+  crypto.getRandomValues(b);
+  return b;
+}
+
+function bufToB64(buf){
+  const str = String.fromCharCode.apply(null, new Uint8Array(buf));
+  return btoa(str);
+}
+function b64ToBuf(b64){
+  const str = atob(b64);
+  const u = new Uint8Array(str.length);
+  for(let i=0;i<str.length;i++) u[i]=str.charCodeAt(i);
+  return u.buffer;
+}
+
+async function encryptWithPassphrase(plain, passphrase){
+  if(!passphrase || passphrase.length<6) throw new Error('Frase demasiado corta (mín 6)');
+  const salt = randomBytes(16);
+  const iv = randomBytes(12);
+  const key = await deriveKey(passphrase, salt);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv: iv}, key, new TextEncoder().encode(plain));
+  // return salt:iv:cipher base64-encoded
+  return [bufToB64(salt), bufToB64(iv), bufToB64(ct)].join(':');
+}
+
+async function decryptWithPassphrase(payload, passphrase){
+  try{
+    const parts = payload.split(':');
+    if(parts.length!==3) throw new Error('Formato inválido');
+    const salt = b64ToBuf(parts[0]);
+    const iv = b64ToBuf(parts[1]);
+    const ct = b64ToBuf(parts[2]);
+    const key = await deriveKey(passphrase, new Uint8Array(salt));
+    const plainBuf = await crypto.subtle.decrypt({name:'AES-GCM', iv: new Uint8Array(iv)}, key, ct);
+    return new TextDecoder().decode(plainBuf);
+  }catch(e){
+    throw new Error('Desencriptado fallido: ' + e.message);
+  }
+}
+
+// UI wiring
+function refresh(){
+  const len = Math.max(8, Math.min(49, parseInt(lengthNumber.value)||16));
+  lengthRange.value = len; lengthNumber.value = len; lenVal.textContent = len;
+  const pass = generatePassword(len);
+  output.textContent = pass;
+  // update binary area depending on toggle state
+  if(toggleBinaryBtn.dataset.on === '1') binaryArea.value = toBinary(pass);
+  else binaryArea.value = '';
+}
+
+lengthRange.addEventListener('input', ()=>{ lengthNumber.value = lengthRange.value; refresh(); });
+lengthNumber.addEventListener('change', ()=>{ lengthRange.value = lengthNumber.value; refresh(); });
+[includeLetters, includeNumbers, includeSpecial, readable, easyType].forEach(el=>el.addEventListener('change', refresh));
+
+regenBtn.addEventListener('click', refresh);
+
+copyBtn.addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(output.textContent);
+    copyBtn.textContent = 'Copiado ✓';
+    setTimeout(()=>copyBtn.textContent='Copiar',900);
+  }catch(e){
+    copyBtn.textContent = 'Error';
+    setTimeout(()=>copyBtn.textContent='Copiar',900);
+  }
+});
+
+toggleBinaryBtn.addEventListener('click', ()=>{
+  if(toggleBinaryBtn.dataset.on === '1'){
+    toggleBinaryBtn.dataset.on = '0'; toggleBinaryBtn.textContent='Mostrar binario'; binaryArea.value='';
+  }else{
+    toggleBinaryBtn.dataset.on = '1'; toggleBinaryBtn.textContent='Ocultar binario'; binaryArea.value = toBinary(output.textContent);
+  }
+});
+
+base64Btn.addEventListener('click', ()=>{ binaryArea.value = toBase64(output.textContent); });
+shaBtn.addEventListener('click', async ()=>{ binaryArea.value = await sha256(output.textContent); });
+
+// presets
+presetNumbers.addEventListener('click', ()=>{ includeLetters.checked=false; includeNumbers.checked=true; includeSpecial.checked=false; readable.checked=false; easyType.checked=false; refresh(); });
+presetLetters.addEventListener('click', ()=>{ includeLetters.checked=true; includeNumbers.checked=false; includeSpecial.checked=false; readable.checked=false; easyType.checked=false; refresh(); });
+presetSpecial.addEventListener('click', ()=>{ includeLetters.checked=false; includeNumbers.checked=false; includeSpecial.checked=true; readable.checked=false; easyType.checked=false; refresh(); });
+presetMixed.addEventListener('click', ()=>{ includeLetters.checked=true; includeNumbers.checked=true; includeSpecial.checked=true; readable.checked=false; easyType.checked=false; refresh(); });
+
+encryptBtn.addEventListener('click', async ()=>{
+  const passphrase = passphraseInput.value;
+  try{
+    const ciphertext = await encryptWithPassphrase(output.textContent, passphrase);
+    binaryArea.value = ciphertext;
+    copyBtn.textContent = 'Copiar';
+  }catch(e){ binaryArea.value = 'Error: ' + e.message }
+});
+
+decryptBtn.addEventListener('click', async ()=>{
+  const passphrase = passphraseInput.value;
+  try{
+    const plain = await decryptWithPassphrase(binaryArea.value.trim(), passphrase);
+    output.textContent = plain;
+    if(toggleBinaryBtn.dataset.on === '1') binaryArea.value = toBinary(plain);
+  }catch(e){ binaryArea.value = 'Error: ' + e.message }
+});
+
+// generate initially
+refresh();
+
+// accessibility: allow clicking output to select
+output.addEventListener('click', ()=>{
+  try{
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(output);
+    sel.removeAllRanges(); sel.addRange(range);
+  }catch(e){}
+});
+
+</script></body>
+</html>
